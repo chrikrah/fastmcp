@@ -1627,6 +1627,8 @@ await server.sendResourceUpdated("file:///logs/app.log");
 
 One session cannot be shown a kind of primitive it never negotiated. MCP settles capabilities during `initialize` and they hold for the life of the session, so a client that connected while the server had no resources at all will not see resources added later — FastMCP logs a warning naming the capability and leaves that session alone. Register one of each kind you intend to add before `start()`, or have the client reconnect; sessions that connect afterwards see everything.
 
+One session cannot be shown a kind of primitive it never negotiated. MCP settles capabilities during `initialize` and they hold for the life of the session, so a client that connected while the server had no resources at all will not see resources added later — FastMCP logs a warning naming the capability and leaves that session alone. Register one of each kind you intend to add before `start()`, or have the client reconnect; sessions that connect afterwards see everything.
+
 ### Resource templates
 
 You can also define resource templates:
