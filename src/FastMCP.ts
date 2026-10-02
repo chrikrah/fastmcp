@@ -2245,7 +2245,7 @@ export class FastMCPSession<
       },
     };
 
-    this.#resourceTemplates.set(resourceTemplate.name, resourceTemplate);
+    this.#resourceTemplates.set(resourceTemplate.uriTemplate, resourceTemplate);
   }
 
   private setupCompleteHandlers() {
@@ -3211,10 +3211,10 @@ export class FastMCP<
   }
 
   /**
-   * Adds a resource to the server.
+   * Adds a resource to the server, replacing any resource with the same URI.
    */
   public addResource(resource: Resource<T>) {
-    this.#resources = this.#resources.filter((r) => r.name !== resource.name);
+    this.#resources = this.#resources.filter((r) => r.uri !== resource.uri);
 
     this.#resources.push(resource);
     if (this.#serverState === ServerState.Running) {
@@ -3223,14 +3223,12 @@ export class FastMCP<
   }
 
   /**
-   * Adds resources to the server.
+   * Adds resources to the server, replacing any resource with the same URI.
    */
   public addResources(resources: Resource<T>[]) {
-    const newResourceNames = new Set(
-      resources.map((resource) => resource.name),
-    );
+    const newResourceUris = new Set(resources.map((resource) => resource.uri));
     this.#resources = this.#resources.filter(
-      (r) => !newResourceNames.has(r.name),
+      (r) => !newResourceUris.has(r.uri),
     );
     this.#resources.push(...resources);
 
@@ -3240,13 +3238,14 @@ export class FastMCP<
   }
 
   /**
-   * Adds a resource template to the server.
+   * Adds a resource template to the server, replacing any template with the
+   * same URI template.
    */
   public addResourceTemplate<
     const Args extends InputResourceTemplateArgument[],
   >(resource: InputResourceTemplate<T, Args>) {
     this.#resourcesTemplates = this.#resourcesTemplates.filter(
-      (t) => t.name !== resource.name,
+      (t) => t.uriTemplate !== resource.uriTemplate,
     );
 
     this.#resourcesTemplates.push(resource);
@@ -3256,16 +3255,17 @@ export class FastMCP<
   }
 
   /**
-   * Adds resource templates to the server.
+   * Adds resource templates to the server, replacing any template with the
+   * same URI template.
    */
   public addResourceTemplates<
     const Args extends InputResourceTemplateArgument[],
   >(resources: InputResourceTemplate<T, Args>[]) {
-    const newResourceTemplateNames = new Set(
-      resources.map((resource) => resource.name),
+    const newUriTemplates = new Set(
+      resources.map((resource) => resource.uriTemplate),
     );
     this.#resourcesTemplates = this.#resourcesTemplates.filter(
-      (t) => !newResourceTemplateNames.has(t.name),
+      (t) => !newUriTemplates.has(t.uriTemplate),
     );
     this.#resourcesTemplates.push(...resources);
 
