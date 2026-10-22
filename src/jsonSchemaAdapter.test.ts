@@ -202,6 +202,68 @@ test("compiles the schema once across many validations", async () => {
   expect(compileCount).toBeGreaterThan(0);
 });
 
+test("validates a schema that declares the 2020-12 dialect", async () => {
+  // MCP makes 2020-12 the default dialect, so schemas taken from another
+  // server or an OpenAPI 3.1 document often say so in `$schema`.
+  const schema = jsonSchemaAdapter({
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    properties: {
+      ...personSchema.properties,
+      point: {
+        items: false,
+        prefixItems: [{ type: "number" }, { type: "number" }],
+        type: "array",
+      },
+    },
+    required: ["name"],
+    type: "object",
+  });
+
+  const valid = await schema["~standard"].validate({
+    name: "Alice",
+    point: [1, 2],
+  });
+  expect(valid.issues).toBeUndefined();
+
+  const invalid = await schema["~standard"].validate({ point: [1, "2", 3] });
+  expect(invalid.issues?.map((issue) => issue.path)).toEqual(
+    expect.arrayContaining([["name"], ["point", 1], ["point"]]),
+  );
+});
+
+test("validates a schema that declares the 2019-09 dialect", async () => {
+  const schema = jsonSchemaAdapter({
+    $schema: "https://json-schema.org/draft/2019-09/schema",
+    ...personSchema,
+  });
+
+  expect(
+    (await schema["~standard"].validate({ name: "Alice" })).issues,
+  ).toBeUndefined();
+  expect(
+    (await schema["~standard"].validate({ age: 30 })).issues?.map(
+      (issue) => issue.path,
+    ),
+  ).toContainEqual(["name"]);
+});
+
+test("keeps draft-07 rules for a schema that declares draft-07", async () => {
+  // Draft-07 spells a tuple as an `items` array; 2020-12 would reject it.
+  const schema = jsonSchemaAdapter({
+    $schema: "http://json-schema.org/draft-07/schema#",
+    properties: {
+      point: { items: [{ type: "number" }], type: "array" },
+    },
+    type: "object",
+  });
+
+  const invalid = await schema["~standard"].validate({ point: ["x"] });
+  expect(invalid.issues?.map((issue) => issue.path)).toContainEqual([
+    "point",
+    0,
+  ]);
+});
+
 test("converts to JSON Schema without a vendor-specific converter", async () => {
   const schema = jsonSchemaAdapter({ ...personSchema });
 

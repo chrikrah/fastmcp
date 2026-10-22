@@ -124,7 +124,7 @@ async function compileSchema(
   let ajvModule;
 
   try {
-    ajvModule = await import("ajv");
+    ajvModule = await importAjv(schema.$schema);
   } catch {
     throw new Error(
       'The "ajv" package is required to validate JSON Schema tool parameters. ' +
@@ -154,6 +154,22 @@ async function compileSchema(
   }
 
   return ajv.compile(schema);
+}
+
+/**
+ * AJV's default class implements draft-07 and refuses the meta-schema URI of
+ * any later draft, so a schema that declares 2019-09 or 2020-12 needs the
+ * class built for that dialect. A schema with no `$schema` keeps draft-07.
+ */
+function importAjv(dialect: string | undefined): Promise<unknown> {
+  switch (dialect?.replace(/#$/, "")) {
+    case "https://json-schema.org/draft/2019-09/schema":
+      return import("ajv/dist/2019.js");
+    case "https://json-schema.org/draft/2020-12/schema":
+      return import("ajv/dist/2020.js");
+    default:
+      return import("ajv");
+  }
 }
 
 function toIssue(error: AjvErrorObject): StandardSchemaV1.Issue {
